@@ -5,12 +5,13 @@ import getAllFriends from '../lib/get-all-friends'
 import { FaUserCircle } from 'react-icons/fa'
 import { ChatBox } from './ChatBox'
 import { getOrCreateChat } from '~/lib/get-or-create-chat'
-import { 
-  AiOutlineMessage, 
+import {
+  AiOutlineMessage,
   AiOutlineFilter,
   AiOutlineSearch,
   AiOutlineRest
 } from 'react-icons/ai'
+import AddFriend from './AddFriend'
 
 type Friend = {
   id: string
@@ -29,7 +30,7 @@ const FriendsList = () => {
         .then(setFriendsList)
         .catch(console.error)
     }
-  }, [user])
+  }, [user, friendsList])
 
   useEffect(() => {
     if (user?.id && selectedFriend) {
@@ -42,9 +43,9 @@ const FriendsList = () => {
   return (
     <div className="flex h-full" style={{ backgroundColor: 'var(--grey-light)' }}>
       {/* Friends List Panel */}
-      <div className="w-80 flex flex-col" style={{ 
-        backgroundColor: 'var(--background)', 
-        borderRight: '1px solid var(--border)' 
+      <div className="w-80 flex flex-col" style={{
+        backgroundColor: 'var(--background)',
+        borderRight: '1px solid var(--border)'
       }}>
         {/* Header */}
         <div className="p-4" style={{ borderBottom: '1px solid var(--border)' }}>
@@ -57,45 +58,20 @@ const FriendsList = () => {
               <span className="text-sm" style={{ color: 'var(--muted-foreground)' }}>Refresh</span>
             </div>
           </div>
-          
+
           {/* Search and Filter */}
-          <div className="flex items-center space-x-2">
-            <div className="flex-1 relative">
-              <AiOutlineSearch className="absolute left-3 top-1/2 transform -translate-y-1/2" style={{ color: 'var(--muted-foreground)' }} size={16} />
-              <input
-                type="text"
-                placeholder="Search"
-                className="w-full pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-opacity-50"
-                style={{ 
-                  border: '1px solid var(--border)', 
-                  backgroundColor: 'var(--background)',
-                  color: 'var(--foreground)'
-                }}
-              />
-            </div>
-            <div className="flex items-center space-x-1 px-3 py-2 rounded-lg hover:opacity-80 cursor-pointer transition-opacity" style={{ border: '1px solid var(--border)' }}>
-              <AiOutlineFilter size={16} style={{ color: 'var(--muted-foreground)' }} />
-              <span className="text-sm" style={{ color: 'var(--muted-foreground)' }}>Filtered</span>
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--primary)' }}></div>
-            </div>
-            <button className="px-3 py-2 rounded-lg hover:opacity-80 text-sm transition-opacity" style={{ 
-              border: '1px solid var(--border)', 
-              color: 'var(--muted-foreground)' 
-            }}>
-              Save
-            </button>
-          </div>
+          <AddFriend />
         </div>
+        
 
         {/* Friends List */}
         <div className="flex-1 overflow-y-auto">
           {friendsList.map((friend) => (
             <div
               key={friend.id}
-              className={`flex items-center p-4 hover:opacity-80 cursor-pointer transition-opacity ${
-                selectedFriend === friend.id ? 'border-l-4' : ''
-              }`}
-              style={{ 
+              className={`flex items-center p-4 hover:opacity-80 cursor-pointer transition-opacity ${selectedFriend === friend.id ? 'border-l-4' : ''
+                }`}
+              style={{
                 backgroundColor: selectedFriend === friend.id ? 'var(--muted)' : 'transparent',
                 borderBottom: '1px solid var(--border)',
                 borderLeftColor: selectedFriend === friend.id ? 'var(--primary)' : 'transparent'
@@ -106,9 +82,9 @@ const FriendsList = () => {
             >
               <div className="relative">
                 <FaUserCircle size={40} style={{ color: 'var(--muted-foreground)' }} />
-                <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2" style={{ 
-                  backgroundColor: 'var(--primary)', 
-                  borderColor: 'var(--background)' 
+                <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2" style={{
+                  backgroundColor: 'var(--primary)',
+                  borderColor: 'var(--background)'
                 }}></div>
               </div>
               <div className="ml-3 flex-1 min-w-0">
@@ -124,7 +100,7 @@ const FriendsList = () => {
               </div>
             </div>
           ))}
-          
+
           {/* Demo entries to match the design */}
           <div className="flex items-center p-4 hover:opacity-80 cursor-pointer transition-opacity" style={{ borderBottom: '1px solid var(--border)' }}>
             <div className="relative">
@@ -150,9 +126,9 @@ const FriendsList = () => {
         {chatId ? (
           <ChatBox chatId={chatId} />
         ) : (
-          <div className="flex-1 flex items-center justify-center" style={{ 
-            color: 'var(--muted-foreground)', 
-            backgroundColor: 'var(--grey-light)' 
+          <div className="flex-1 flex items-center justify-center" style={{
+            color: 'var(--muted-foreground)',
+            backgroundColor: 'var(--grey-light)'
           }}>
             <div className="text-center">
               <AiOutlineMessage size={48} className="mx-auto mb-4" style={{ color: 'var(--muted-foreground)' }} />
@@ -166,4 +142,4 @@ const FriendsList = () => {
   )
 }
 
-export default FriendsList
+export default FriendsList;

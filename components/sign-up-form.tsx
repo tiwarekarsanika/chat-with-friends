@@ -19,11 +19,35 @@ import { useState } from 'react'
 export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isSocialLoading, setIsSocialLoading] = useState(false)
   const router = useRouter()
+
+  const handleGoogleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const supabase = createClient()
+    setIsSocialLoading(true)
+    setError(null)
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/oauth?next=/`,
+        },
+      })
+      if (error) throw error
+      // OAuth redirect happens automatically
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'An error occurred')
+    } finally {
+      setIsSocialLoading(false)
+    }
+  }
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,9 +66,10 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/protected`,
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
-            full_name: fullName,  // Custom field stored in user_metadata
+            full_name: fullName,
+            phone: phone,
           },
         },
       })
@@ -66,17 +91,53 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
           <CardDescription>Create a new account</CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Google Sign Up - placed at the top */}
+          <div className="mb-6">
+            <Button 
+              type="button" 
+              variant="outline"
+              className="w-full" 
+              disabled={isLoading || isSocialLoading}
+              onClick={handleGoogleSignUp}
+            >
+              {isSocialLoading ? 'Signing up...' : 'Sign up with Google'}
+            </Button>
+          </div>
+
+          {/* Divider */}
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
+            </div>
+          </div>
+
           <form onSubmit={handleSignUp}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
                 <Label htmlFor="name">Full Name</Label>
                 <Input
                   id="name"
-                  type="name"
+                  type="text"
                   placeholder="Mark Josh"
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+91 97690 95698"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                 />
               </div>
               <div className="grid gap-2">
@@ -91,9 +152,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                 />
               </div>
               <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                </div>
+                <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
                   type="password"
@@ -103,9 +162,7 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                 />
               </div>
               <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="repeat-password">Repeat Password</Label>
-                </div>
+                <Label htmlFor="repeat-password">Repeat Password</Label>
                 <Input
                   id="repeat-password"
                   type="password"
@@ -115,17 +172,18 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Creating an account...' : 'Sign up'}
+              <Button type="submit" className="w-full" disabled={isLoading || isSocialLoading}>
+                {isLoading ? 'Creating account...' : 'Sign up'}
               </Button>
             </div>
-            <div className="mt-4 text-center text-sm">
-              Already have an account?{' '}
-              <Link href="/auth/login" className="underline underline-offset-4">
-                Login
-              </Link>
-            </div>
           </form>
+
+          <div className="mt-4 text-center text-sm">
+            Already have an account?{' '}
+            <Link href="/auth/login" className="underline underline-offset-4">
+              Login
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>
