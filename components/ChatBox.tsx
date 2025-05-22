@@ -4,14 +4,14 @@ import { useMessagesQuery } from '../hooks/use-messages-query'
 import { storeMessage } from '../lib/store-messages'
 import { useUser } from '@supabase/auth-helpers-react'
 import { IoSend } from 'react-icons/io5'
-import { 
-  AiOutlinePhone, 
-  AiOutlineVideoCamera, 
+import {
+  AiOutlinePhone,
+  AiOutlineVideoCamera,
   AiOutlineMore,
   AiOutlineSmile,
   AiOutlinePaperClip
 } from 'react-icons/ai'
-import { FaUserCircle } from 'react-icons/fa'
+import { FaUserCircle, FaMicrophone } from 'react-icons/fa'
 
 export function ChatBox({ chatId }: { chatId: string }) {
   const [input, setInput] = useState('')
@@ -36,12 +36,30 @@ export function ChatBox({ chatId }: { chatId: string }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Updated function to get sender details with fallback
+  const getSenderDetails = (senderId: string) => {
+    if (senderId === user?.id) {
+      return {
+        name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'You',
+        email: user?.email || 'tiwarekarsanika@gmail.com',
+        phone: user?.phone || '+91 99978 44008',
+      }
+    }
+
+    // Fallback if no details found
+    return {
+      name: 'Periskope',
+      email: 'email@hashlabz.dev',
+      phone: '+91 98765 12345'
+    }
+  }
+
   return (
     <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--background)' }}>
       {/* Chat Header */}
-      <div className="flex items-center justify-between p-4" style={{ 
-        borderBottom: '1px solid var(--border)', 
-        backgroundColor: 'var(--background)' 
+      <div className="flex items-center justify-between p-4" style={{
+        borderBottom: '1px solid var(--border)',
+        backgroundColor: 'var(--background)'
       }}>
         <div className="flex items-center space-x-3">
           <FaUserCircle size={36} style={{ color: 'var(--muted-foreground)' }} />
@@ -69,8 +87,8 @@ export function ChatBox({ chatId }: { chatId: string }) {
       <div className="flex-1 overflow-y-auto p-4" style={{ backgroundColor: 'var(--grey-light)' }}>
         {/* Date Separator */}
         <div className="flex items-center justify-center mb-4">
-          <div className="px-3 py-1 rounded-full shadow-sm text-xs" style={{ 
-            backgroundColor: 'var(--background)', 
+          <div className="px-3 py-1 rounded-full shadow-sm text-xs" style={{
+            backgroundColor: 'var(--background)',
             color: 'var(--muted-foreground)',
             border: '1px solid var(--border)'
           }}>
@@ -78,66 +96,65 @@ export function ChatBox({ chatId }: { chatId: string }) {
           </div>
         </div>
 
-        {/* Sample Messages */}
-        <div className="space-y-4 mb-4">
-          <div className="flex items-start space-x-2">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'var(--secondary)' }}>
-              <span className="text-xs font-medium" style={{ color: 'var(--secondary-foreground)' }}>RA</span>
-            </div>
-            <div className="rounded-lg p-3 shadow-sm max-w-xs" style={{ backgroundColor: 'var(--chat-other)' }}>
-              <p className="text-sm" style={{ color: 'var(--foreground)' }}>Hello, South Euna!</p>
-              <span className="text-xs mt-1 block" style={{ color: 'var(--muted-foreground)' }}>08:01</span>
-            </div>
-          </div>
-
-          <div className="flex items-start space-x-2 mt-6">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'var(--secondary)' }}>
-              <span className="text-xs font-medium" style={{ color: 'var(--secondary-foreground)' }}>RA</span>
-            </div>
-            <div className="rounded-lg p-3 shadow-sm max-w-xs" style={{ backgroundColor: 'var(--chat-other)' }}>
-              <p className="text-sm" style={{ color: 'var(--foreground)' }}>Hello, Livonia!</p>
-              <span className="text-xs mt-1 block" style={{ color: 'var(--muted-foreground)' }}>08:01</span>
-            </div>
-          </div>
-        </div>
-
         {/* User Messages */}
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex mb-4 ${
-              msg.sender_id === user?.id ? 'justify-end' : 'justify-start'
-            }`}
-          >
-            {msg.sender_id !== user?.id && (
-              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mr-2" style={{ backgroundColor: 'var(--muted-foreground)' }}>
-                <span className="text-xs font-medium" style={{ color: 'var(--background)' }}>U</span>
-              </div>
-            )}
+        {messages.map((msg) => {
+          const senderDetails = getSenderDetails(msg.sender_id)
+          const isCurrentUser = msg.sender_id === user?.id
+
+          return (
             <div
-              className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-sm"
-              style={{
-                backgroundColor: msg.sender_id === user?.id ? 'var(--primary)' : 'var(--chat-other)',
-                color: msg.sender_id === user?.id ? 'var(--primary-foreground)' : 'var(--foreground)'
-              }}
+              key={msg.id}
+              className={`flex mb-4 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
             >
-              <p className="text-sm break-words">{msg.content}</p>
-              <span className={`text-xs mt-1 block ${
-                msg.sender_id === user?.id ? 'opacity-75' : ''
-              }`} style={{ 
-                color: msg.sender_id === user?.id ? 'var(--primary-foreground)' : 'var(--muted-foreground)'
-              }}>
-                {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
+              {!isCurrentUser && (
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mr-2" style={{ backgroundColor: 'var(--muted-foreground)' }}>
+                  <span className="text-xs font-medium" style={{ color: 'var(--background)' }}>
+                    {senderDetails.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+
+              <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
+                <div
+                  className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-sm relative"
+                  style={{
+                    backgroundColor: isCurrentUser ? 'var(--color-chat-user)' : 'var(--chat-other)',
+                    color: 'var(--foreground)'
+                  }}
+                >
+                  {/* Name and Phone inside message bubble */}
+                  <div className="flex justify-between items-center mb-2 gap-4">
+                    <span className="text-xs font-medium" style={{ color: 'var(--secondary)' }}>
+                      {senderDetails.name}
+                    </span>
+                    <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+                      {senderDetails.phone}
+                    </span>
+                  </div>
+
+
+                  <p className="text-sm break-words">{msg.content}</p>
+
+                  {/* Timestamp */}
+                  <div className={`flex items-center mt-1 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
+                    <span
+                      className={`text-xs ${isCurrentUser ? 'opacity-75' : ''}`}
+                      style={{ color: 'var(--muted-foreground)' }}
+                    >
+                      {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Input Area */}
       <div className="border-t border-gray-200 bg-white p-4">
-        <div className="flex items-end space-x-2">
+        <div className="flex items-center space-x-2">
           <button className="p-2 rounded-lg hover:bg-gray-100 text-gray-600">
             <AiOutlinePaperClip size={20} />
           </button>
@@ -162,7 +179,7 @@ export function ChatBox({ chatId }: { chatId: string }) {
             </button>
           ) : (
             <button className="p-3 rounded-lg hover:bg-gray-100 text-gray-600">
-              <AiOutlinePhone size={18} />
+              <FaMicrophone size={18} />
             </button>
           )}
         </div>

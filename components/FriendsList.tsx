@@ -40,7 +40,7 @@ const FriendsList = () => {
   }, [selectedFriend, user])
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: 'var(--grey-light)' }}>
+    <div className="flex h-full" style={{ backgroundColor: 'var(--grey-light)' }}>
       {/* Friends List Panel */}
       <div className="w-80 flex flex-col" style={{ 
         backgroundColor: 'var(--background)', 
@@ -143,32 +143,6 @@ const FriendsList = () => {
             </div>
           </div>
           
-          <div className="flex items-center p-4 hover:opacity-80 cursor-pointer transition-opacity" style={{ borderBottom: '1px solid var(--border)' }}>
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--secondary)' }}>
-                <span className="text-sm font-medium" style={{ color: 'var(--secondary-foreground)' }}>PT</span>
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2" style={{ 
-                backgroundColor: 'var(--primary)', 
-                borderColor: 'var(--background)' 
-              }}></div>
-            </div>
-            <div className="ml-3 flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>Periskope Team Chat</p>
-                <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>28-Feb-25</span>
-              </div>
-              <p className="text-sm truncate" style={{ color: 'var(--muted-foreground)' }}>
-                Periskope: Test message
-              </p>
-            </div>
-            <div className="flex items-center space-x-1">
-              <span className="text-xs rounded-full px-2 py-1" style={{ 
-                backgroundColor: 'var(--primary)', 
-                color: 'var(--primary-foreground)' 
-              }}>1</span>
-            </div>
-          </div>
         </div>
       </div>
 

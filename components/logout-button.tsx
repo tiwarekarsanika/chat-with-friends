@@ -3,6 +3,7 @@
 import { createClient } from '~/lib/client'
 import { Button } from '~/components/ui/button'
 import { useRouter } from 'next/navigation'
+import { RiLogoutBoxRLine } from "react-icons/ri";
 
 export function LogoutButton() {
   const router = useRouter()
@@ -13,5 +14,5 @@ export function LogoutButton() {
     router.push('/auth/login')
   }
 
-  return <Button onClick={logout}>Logout</Button>
+  return <RiLogoutBoxRLine onClick={logout} />
 }

@@ -44,6 +44,7 @@
   --grey-dark: #374151;   /* 🔄 ADDED */
   --chat-user: #e0ffed;   /* 🔄 ADDED */
   --chat-other: #ffffff;  /* 🔄 ADDED */
+  --chat-text: #000000
 }
 
 .dark {
