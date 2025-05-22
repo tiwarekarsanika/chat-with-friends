@@ -7,8 +7,6 @@ import { ChatBox } from './ChatBox'
 import { getOrCreateChat } from '~/lib/get-or-create-chat'
 import {
   AiOutlineMessage,
-  AiOutlineFilter,
-  AiOutlineSearch,
   AiOutlineRest
 } from 'react-icons/ai'
 import AddFriend from './AddFriend'
@@ -23,6 +21,17 @@ const FriendsList = () => {
   const [selectedFriend, setSelectedFriend] = useState<string | null>(null)
   const [friendsList, setFriendsList] = useState<Friend[]>([])
   const user = useUser()
+
+  const refreshFriendsList = async () => {
+  if (user?.id) {
+    try {
+      const friends = await getAllFriends(user.id)
+      setFriendsList(friends)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+}
 
   useEffect(() => {
     if (user?.id) {
@@ -60,7 +69,7 @@ const FriendsList = () => {
           </div>
 
           {/* Search and Filter */}
-          <AddFriend />
+          <AddFriend onFriendAdded={refreshFriendsList}/>
         </div>
         
 

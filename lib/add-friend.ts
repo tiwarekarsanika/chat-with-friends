@@ -1,25 +1,3 @@
-// import { createSupabaseBrowserClient } from './supabase-browser'
-
-// export default async function addFriend(friendId: string) {
-//     const supabase = createSupabaseBrowserClient()
-//     const user = await supabase.auth.getUser()
-
-//     if (!user.data.user?.id) return
-
-//     const currentUserId = user.data.user.id
-
-//     const { error } = await supabase.from('friends').insert([
-//         { user_id: currentUserId, friend_id: friendId },
-//         { user_id: friendId, friend_id: currentUserId },
-//     ])
-
-//     if (error) {
-//         console.error(error)
-//         alert('Error adding friend')
-//         return
-//     }
-// }
-
 import { createSupabaseBrowserClient } from './supabase-browser'
 
 export default async function addFriend(friendId: string) {

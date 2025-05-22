@@ -1,62 +1,3 @@
-// 'use client'
-
-// import React from 'react'
-// import { useState } from 'react'
-// import searchFriend from '~/lib/search-friend'
-// import addFriend from '~/lib/add-friend'
-
-
-// const AddFriend = () => {
-//     const [searchEmail, setSearchEmail] = useState('')
-//     const [foundUser, setFoundUser] = useState<null | { id: string, email: string }>(null)
-
-//     const handleSearch = async () => {
-//         const data = await searchFriend(searchEmail)
-//         setFoundUser(data)
-//     }
-
-//     const addNewFriend = async (friendId: string) => {
-//         await addFriend(friendId)
-//         alert('Friend added successfully')
-//         setSearchEmail('')
-//         setFoundUser(null)
-//     }
-
-//     return (
-//         <div className="p-4 border-t mt-4">
-//             <input
-//                 type="text"
-//                 placeholder="Search by email"
-//                 className="border px-2 py-1 rounded w-full mb-2"
-//                 value={searchEmail}
-//                 onChange={(e) => setSearchEmail(e.target.value)}
-//             />
-//             <button
-//                 onClick={handleSearch}
-//                 className="bg-blue-500 text-white px-4 py-1 rounded w-full"
-//             >
-//                 Search
-//             </button>
-
-//             {foundUser && (
-//                 <div className="mt-2">
-//                     <p>{foundUser.email}</p>
-//                     <button
-//                         onClick={() => addNewFriend(foundUser.id)}
-//                         className="bg-green-500 text-white px-4 py-1 rounded mt-1"
-//                     >
-//                         Add Friend
-//                     </button>
-//                 </div>
-//             )}
-//         </div>
-
-//     )
-// }
-
-// export default AddFriend
-
-// AddFriend.tsx
 'use client'
 
 import React, { useState } from 'react'
@@ -64,7 +5,7 @@ import { AiOutlineSearch, AiOutlineFilter } from 'react-icons/ai'
 import searchFriend from '~/lib/search-friend'
 import addFriend from '~/lib/add-friend'
 
-const AddFriend = () => {
+const AddFriend = ({ onFriendAdded }: { onFriendAdded?: () => void }) => {
     const [searchEmail, setSearchEmail] = useState('')
     const [foundUser, setFoundUser] = useState<null | { id: string, email: string }>(null)
     const [isSearching, setIsSearching] = useState(false)
@@ -111,6 +52,7 @@ const AddFriend = () => {
         } finally {
             setIsAdding(false)
         }
+        onFriendAdded?.() // Refresh the friends list
     }
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
