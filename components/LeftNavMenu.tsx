@@ -19,9 +19,7 @@ const LeftNavMenu = () => {
   const router = useRouter()
   const user = useUser()
   const {
-    isLoading,
-    session: _session,
-    error: _error
+    isLoading
   } = useSessionContext()
   const [isDarkMode, setIsDarkMode] = useState(false)
 
