@@ -12,11 +12,11 @@ export default function HomeChatPage() {
   if (isLoading || !user) {
     return (
       <div className="flex flex-col h-screen items-center justify-center">
-        <p>Loading...</p>
-        <p className="text-sm text-gray-500 mt-2">
-          Auth state: {isLoading ? 'Loading' : 'Not authenticated'}
-        </p>
-        {error && <p className="text-sm text-red-500 mt-2">Error: {error.message}</p>}
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="mt-4 text-sm text-muted-foreground">Getting things ready for you...</p>
+          {error && <p className="text-sm text-red-500 mt-2">Error: {error.message}</p>}
+        </div>
       </div>
     )
   }

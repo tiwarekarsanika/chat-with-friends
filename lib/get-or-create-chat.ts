@@ -16,7 +16,8 @@ export async function getOrCreateChat(participantIds: string[]) {
   if (error) throw error
 
   if (existingChats && existingChats.length > 0) {
-    return existingChats[0].id
+    // console.log(existingChats[0].id)
+    return existingChats[0]
   }
 
   // Create chat if not exists
@@ -28,5 +29,5 @@ export async function getOrCreateChat(participantIds: string[]) {
 
   if (insertError) throw insertError
 
-  return newChat.id
+  return newChat
 }

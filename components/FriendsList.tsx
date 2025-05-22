@@ -10,44 +10,64 @@ import {
   AiOutlineRest
 } from 'react-icons/ai'
 import AddFriend from './AddFriend'
+import { getUserDetailsById } from '~/lib/get-user-details'
+import { getLastMessage } from '~/lib/get-last-message'
 
 type Friend = {
   id: string
-  email: string
+  name?: string
+  lastMessage?: string
+  lastMessageTime?: string
 }
 
 const FriendsList = () => {
-  const [chatId, setChatId] = useState<string | null>(null)
+  const [chat, setChat] = useState<any | null>(null)
   const [selectedFriend, setSelectedFriend] = useState<string | null>(null)
   const [friendsList, setFriendsList] = useState<Friend[]>([])
   const user = useUser()
 
   const refreshFriendsList = async () => {
-  if (user?.id) {
+    if (!user?.id) return
+
     try {
       const friends = await getAllFriends(user.id)
-      setFriendsList(friends)
+
+      const enrichedFriends = await Promise.all(friends.map(async (friend) => {
+        const userDetails = await getUserDetailsById(friend.id)
+        const chat = await getOrCreateChat([user.id!, friend.id])
+        const lastMsg = await getLastMessage(chat.id)
+        // console.log("this was the last message ", lastMsg)
+        return {
+          id: friend.id,
+          name: userDetails?.full_name || friend.email.split('@')[0],
+          lastMessage: lastMsg?.content || 'Click to start chatting...',
+          lastMessageTime: lastMsg?.created_at ? new Date(lastMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
+        }
+      }))
+
+      setFriendsList(enrichedFriends)
     } catch (error) {
       console.error(error)
     }
   }
-}
 
   useEffect(() => {
     if (user?.id) {
-      getAllFriends(user.id)
-        .then(setFriendsList)
-        .catch(console.error)
+      refreshFriendsList()
     }
-  }, [user, friendsList])
+  }, [user])
+
 
   useEffect(() => {
     if (user?.id && selectedFriend) {
+      // console.log("user and selected friend are ", user, selectedFriend)
       getOrCreateChat([user.id, selectedFriend])
-        .then(setChatId)
+        .then(setChat)
         .catch(console.error)
     }
+    // console.log("the chat is ", chat)
   }, [selectedFriend, user])
+
 
   return (
     <div className="flex h-full" style={{ backgroundColor: 'var(--grey-light)' }}>
@@ -69,71 +89,57 @@ const FriendsList = () => {
           </div>
 
           {/* Search and Filter */}
-          <AddFriend onFriendAdded={refreshFriendsList}/>
+          <AddFriend onFriendAdded={refreshFriendsList} />
         </div>
-        
+
 
         {/* Friends List */}
         <div className="flex-1 overflow-y-auto">
-          {friendsList.map((friend) => (
-            <div
-              key={friend.id}
-              className={`flex items-center p-4 hover:opacity-80 cursor-pointer transition-opacity ${selectedFriend === friend.id ? 'border-l-4' : ''
-                }`}
-              style={{
-                backgroundColor: selectedFriend === friend.id ? 'var(--muted)' : 'transparent',
-                borderBottom: '1px solid var(--border)',
-                borderLeftColor: selectedFriend === friend.id ? 'var(--primary)' : 'transparent'
-              }}
-              onClick={() => {
-                setSelectedFriend(friend.id)
-              }}
-            >
-              <div className="relative">
-                <FaUserCircle size={40} style={{ color: 'var(--muted-foreground)' }} />
-                <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2" style={{
-                  backgroundColor: 'var(--primary)',
-                  borderColor: 'var(--background)'
-                }}></div>
-              </div>
-              <div className="ml-3 flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>
-                    {friend.email.split('@')[0]}
-                  </p>
-                  <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>12:07</span>
+          {friendsList.length > 0 ? (
+            friendsList.map((friend) => (
+              <div
+                key={friend.id}
+                className={`flex items-center p-4 hover:opacity-80 cursor-pointer transition-opacity ${selectedFriend === friend.id ? 'border-l-4' : ''}`}
+                style={{
+                  backgroundColor: selectedFriend === friend.id ? 'var(--muted)' : 'transparent',
+                  borderBottom: '1px solid var(--border)',
+                  borderLeftColor: selectedFriend === friend.id ? 'var(--primary)' : 'transparent'
+                }}
+                onClick={() => setSelectedFriend(friend.id)}
+              >
+                <div className="relative w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-lg font-semibold">
+                  {friend.name?.charAt(0).toUpperCase()}
                 </div>
-                <p className="text-sm truncate" style={{ color: 'var(--muted-foreground)' }}>
-                  Click to start chatting...
-                </p>
-              </div>
-            </div>
-          ))}
 
-          {/* Demo entries to match the design */}
-          <div className="flex items-center p-4 hover:opacity-80 cursor-pointer transition-opacity" style={{ borderBottom: '1px solid var(--border)' }}>
-            <div className="relative">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--primary)' }}>
-                <span className="text-sm font-medium" style={{ color: 'var(--primary-foreground)' }}>TS</span>
+                <div className="ml-3 flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>
+                      {friend.name}
+                    </p>
+                    <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{friend.lastMessageTime || ''}</span>
+                  </div>
+                  <p className="text-sm truncate" style={{ color: 'var(--muted-foreground)' }}>
+                    {friend.lastMessage}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="ml-3 flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>Test Skope Final 5</p>
-                <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Yesterday</span>
-              </div>
-              <p className="text-sm truncate" style={{ color: 'var(--muted-foreground)' }}>
-                Support2: This does not go on Tuesday...
+            ))
+          ) : (
+            <div className="flex items-center justify-center h-full px-4 text-center text-sm text-muted-foreground">
+              <p>
+                👋 No chats yet!<br />
+                Search for friends and start talking 🎉
               </p>
             </div>
-          </div>
+          )
+          }
         </div>
       </div>
 
       {/* Chat Area */}
       <div className="flex-1 flex flex-col">
-        {chatId ? (
-          <ChatBox chatId={chatId} />
+        {chat ? (
+          <ChatBox chatId={chat.id} participants={chat.participant_ids} />
         ) : (
           <div className="flex-1 flex items-center justify-center" style={{
             color: 'var(--muted-foreground)',

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useMessagesQuery } from '../hooks/use-messages-query'
 import { storeMessage } from '../lib/store-messages'
 import { useUser } from '@supabase/auth-helpers-react'
@@ -12,12 +12,36 @@ import {
   AiOutlinePaperClip
 } from 'react-icons/ai'
 import { FaUserCircle, FaMicrophone } from 'react-icons/fa'
+import { getUserDetailsById } from '~/lib/get-user-details'
 
-export function ChatBox({ chatId }: { chatId: string }) {
+export function ChatBox({ chatId, participants }: { chatId: string, participants: any[] }) {
   const [input, setInput] = useState('')
   const messages = useMessagesQuery(chatId)
   const user = useUser()
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [userDetails, setUserDetails] = useState<{ [id: string]: any }>({})
+
+  // console.log("the participants of this chat are ", participants)
+  // console.log("the chat id is ", chatId)
+  const recipient = participants.find((p) => p !== user?.id)
+
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      const detailsMap: { [id: string]: any } = {}
+
+      for (const id of participants) {
+        if (!userDetails[id]) {
+          const details = await getUserDetailsById(id)
+          detailsMap[id] = details
+        }
+      }
+
+      setUserDetails((prev) => ({ ...prev, ...detailsMap }))
+    }
+
+    fetchUserDetails()
+  }, [participants])
+
 
   const sendMessage = async () => {
     if (!input.trim() || !user) return
@@ -37,23 +61,24 @@ export function ChatBox({ chatId }: { chatId: string }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Updated function to get sender details with fallback
   const getSenderDetails = (senderId: string) => {
     if (senderId === user?.id) {
       return {
         name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'You',
-        email: user?.email || 'tiwarekarsanika@gmail.com',
-        phone: user?.phone || '+91 99978 44008',
+        email: user?.email,
+        phone: user?.phone,
       }
     }
 
-    // Fallback if no details found
+    const details = userDetails[senderId]
     return {
-      name: 'Periskope',
-      email: 'email@hashlabz.dev',
-      phone: '+91 98765 12345'
+      name: details?.full_name || details?.email?.split('@')[0] || 'Recipient',
+      email: details?.email,
+      phone: details?.phone,
     }
   }
+
+  const recipientDetails = getSenderDetails(recipient)
 
   return (
     <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--background)' }}>
@@ -65,9 +90,11 @@ export function ChatBox({ chatId }: { chatId: string }) {
         <div className="flex items-center space-x-3">
           <FaUserCircle size={36} style={{ color: 'var(--muted-foreground)' }} />
           <div>
-            <h3 className="font-medium" style={{ color: 'var(--foreground)' }}>Test El Centro</h3>
-            <div className="flex items-center space-x-2 text-sm" style={{ color: 'var(--muted-foreground)' }}>
-              <span>Roshnag Airtel, Rohirag Jio, Bharat Kumar Ramesh, Periskope</span>
+            <h3 className="font-medium" style={{ color: 'var(--foreground)' }}>
+              {recipientDetails?.name || 'Chat'}
+            </h3>
+            <div>
+              <span>{recipientDetails?.email || ''}</span>
             </div>
           </div>
         </div>
@@ -87,70 +114,74 @@ export function ChatBox({ chatId }: { chatId: string }) {
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4" style={{ backgroundColor: 'var(--grey-light)' }}>
         {/* Date Separator */}
-        <div className="flex items-center justify-center mb-4">
-          <div className="px-3 py-1 rounded-full shadow-sm text-xs" style={{
-            backgroundColor: 'var(--background)',
-            color: 'var(--muted-foreground)',
-            border: '1px solid var(--border)'
-          }}>
-            22-01-2025
-          </div>
-        </div>
-
-        {/* User Messages */}
-        {messages.map((msg) => {
+        {messages.map((msg, index) => {
           const senderDetails = getSenderDetails(msg.sender_id)
           const isCurrentUser = msg.sender_id === user?.id
 
+          const currentDate = new Date(msg.created_at).toLocaleDateString('en-GB')
+          const prevDate = index > 0 ? new Date(messages[index - 1].created_at).toLocaleDateString('en-GB') : null
+
+          const showDateSeparator = index === 0 || currentDate !== prevDate
+
           return (
-            <div
-              key={msg.id}
-              className={`flex mb-4 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
-            >
-              {!isCurrentUser && (
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mr-2" style={{ backgroundColor: 'var(--muted-foreground)' }}>
-                  <span className="text-xs font-medium" style={{ color: 'var(--background)' }}>
-                    {senderDetails.name.charAt(0).toUpperCase()}
-                  </span>
+            <React.Fragment key={msg.id}>
+              {showDateSeparator && (
+                <div className="flex items-center justify-center mb-4">
+                  <div
+                    className="px-3 py-1 rounded-full shadow-sm text-xs"
+                    style={{
+                      backgroundColor: 'var(--background)',
+                      color: 'var(--muted-foreground)',
+                      border: '1px solid var(--border)',
+                    }}
+                  >
+                    {currentDate}
+                  </div>
                 </div>
               )}
 
-              <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
-                <div
-                  className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-sm relative"
-                  style={{
-                    backgroundColor: isCurrentUser ? 'var(--color-chat-user)' : 'var(--chat-other)',
-                    color: 'var(--foreground)'
-                  }}
-                >
-                  {/* Name and Phone inside message bubble */}
-                  <div className="flex justify-between items-center mb-2 gap-4">
-                    <span className="text-xs font-medium" style={{ color: 'var(--secondary)' }}>
-                      {senderDetails.name}
-                    </span>
-                    <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
-                      {senderDetails.phone}
+              <div className={`flex mb-4 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
+                {!isCurrentUser && (
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mr-2" style={{ backgroundColor: 'var(--muted-foreground)' }}>
+                    <span className="text-xs font-medium" style={{ color: 'var(--background)' }}>
+                      {senderDetails.name.charAt(0).toUpperCase()}
                     </span>
                   </div>
+                )}
 
+                <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
+                  <div
+                    className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-sm relative"
+                    style={{
+                      backgroundColor: isCurrentUser ? 'var(--color-chat-user)' : 'var(--chat-other)',
+                      color: 'var(--foreground)',
+                    }}
+                  >
+                    <div className="flex justify-between items-center mb-2 gap-4">
+                      <span className="text-xs font-medium" style={{ color: 'var(--secondary)' }}>
+                        {senderDetails.name}
+                      </span>
+                      <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+                        {senderDetails.phone || senderDetails.email}
+                      </span>
+                    </div>
 
-                  <p className="text-sm break-words">{msg.content}</p>
+                    <p className="text-sm break-words">{msg.content}</p>
 
-                  {/* Timestamp */}
-                  <div className={`flex items-center mt-1 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
-                    <span
-                      className={`text-xs ${isCurrentUser ? 'opacity-75' : ''}`}
-                      style={{ color: 'var(--muted-foreground)' }}
-                    >
-                      {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                    <div className={`flex items-center mt-1 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
+                      <span
+                        className={`text-xs ${isCurrentUser ? 'opacity-75' : ''}`}
+                        style={{ color: 'var(--muted-foreground)' }}
+                      >
+                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </React.Fragment>
           )
         })}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Input Area */}

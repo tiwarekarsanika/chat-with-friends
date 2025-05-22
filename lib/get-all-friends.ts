@@ -11,8 +11,8 @@ export default async function getAllFriends(userId: string) {
 
   if (error) throw error
 
-  const { data: userData } = await supabase.auth.getUser()
-  console.log(userData.user?.user_metadata.full_name)
+  // const { data: userData } = await supabase.auth.getUser()
+  // console.log(userData.user?.user_metadata.full_name)
 
   return data.map((row) => ({
     id: row.friend_id,
