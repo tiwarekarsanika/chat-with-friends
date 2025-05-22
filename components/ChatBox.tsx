@@ -20,10 +20,11 @@ export function ChatBox({ chatId }: { chatId: string }) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const sendMessage = async () => {
-    if (!input.trim()) return
-    await storeMessage({ chatId, senderId: user?.id!, content: input })
+    if (!input.trim() || !user) return
+    await storeMessage({ chatId, senderId: user.id, content: input })
     setInput('')
   }
+
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

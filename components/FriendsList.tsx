@@ -138,11 +138,10 @@ const FriendsList = () => {
                 <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>Yesterday</span>
               </div>
               <p className="text-sm truncate" style={{ color: 'var(--muted-foreground)' }}>
-                Support2: This doesn't go on Tuesday...
+                Support2: This does not go on Tuesday...
               </p>
             </div>
           </div>
-          
         </div>
       </div>
 

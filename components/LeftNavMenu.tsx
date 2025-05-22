@@ -20,8 +20,8 @@ const LeftNavMenu = () => {
   const user = useUser()
   const {
     isLoading,
-    session,
-    error
+    session: _session,
+    error: _error
   } = useSessionContext()
   const [isDarkMode, setIsDarkMode] = useState(false)
 
@@ -72,9 +72,8 @@ const LeftNavMenu = () => {
             <button
               key={name}
               onClick={() => setSelectedIcon(name)}
-              className={`p-2 rounded-lg transition-all duration-200 ${
-                isSelected ? 'text-[var(--primary)]' : 'text-[var(--muted-foreground)] hover:text-[var(--primary)]'
-              }`}
+              className={`p-2 rounded-lg transition-all duration-200 ${isSelected ? 'text-[var(--primary)]' : 'text-[var(--muted-foreground)] hover:text-[var(--primary)]'
+                }`}
             >
               <Icon size={16} />
             </button>
