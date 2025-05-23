@@ -11,8 +11,6 @@ export async function getOrCreateChat(participantIds: string[]) {
   // Determine if it's a group chat (more than 2 participants)
   const isGroup = sortedIds.length > 2
 
-  // Check if chat exists with exact participant match
-  // For exact array matching, we need to filter by array length and contents
   const { data: allChats, error } = await supabase
     .from('chats')
     .select('*')
