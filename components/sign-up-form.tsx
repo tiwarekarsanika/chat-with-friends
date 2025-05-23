@@ -37,8 +37,8 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/oauth?next=/`,
-                },
+          redirectTo: `${window.location.origin}/auth/oauth`,
+        },
       })
       if (error) throw error
       // OAuth redirect happens automatically
@@ -93,10 +93,10 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
         <CardContent>
           {/* Google Sign Up - placed at the top */}
           <div className="mb-6">
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               variant="outline"
-              className="w-full" 
+              className="w-full"
               disabled={isLoading || isSocialLoading}
               onClick={handleGoogleSignUp}
             >
