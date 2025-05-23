@@ -9,14 +9,12 @@ export async function getLastMessage(chatId: string) {
         .eq('chat_id', chatId)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()  // <- Use maybeSingle instead of single
 
     if (error) {
-        console.error(error)
+        console.error('Error fetching last message:', error)
         return null
     }
 
-    // console.log("this is data from last message ", data)
-    return data
+    return data // Can be null if no message exists
 }
-

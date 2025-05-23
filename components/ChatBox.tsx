@@ -14,41 +14,72 @@ import {
 import { FaUserCircle, FaMicrophone } from 'react-icons/fa'
 import { getUserDetailsById } from '~/lib/get-user-details'
 
-export function ChatBox({ chatId, participants }: { chatId: string, participants: any[] }) {
+export function ChatBox({ 
+  chatId, 
+  participants, 
+  isGroup = false, 
+  chatName = null 
+}: { 
+  chatId: string, 
+  participants: any[], 
+  isGroup?: boolean,
+  chatName?: string | null 
+}) {
   const [input, setInput] = useState('')
   const messages = useMessagesQuery(chatId)
   const user = useUser()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [userDetails, setUserDetails] = useState<{ [id: string]: any }>({})
 
-  // console.log("the participants of this chat are ", participants)
-  // console.log("the chat id is ", chatId)
-  const recipient = participants.find((p) => p !== user?.id)
+  // For group chats, we don't need to find a single recipient
+  const recipient = !isGroup ? participants.find((p) => p !== user?.id) : null
 
   useEffect(() => {
     const fetchUserDetails = async () => {
-      const detailsMap: { [id: string]: any } = {}
+      if (isGroup) {
+        // For group chats, fetch details for all participants except current user
+        const userParticipants = participants.filter(id => id !== user?.id)
+        const detailsMap: { [id: string]: any } = {}
 
-      for (const id of participants) {
-        if (!userDetails[id]) {
-          const details = await getUserDetailsById(id)
-          detailsMap[id] = details
+        for (const id of userParticipants) {
+          if (!userDetails[id]) {
+            try {
+              const details = await getUserDetailsById(id)
+              detailsMap[id] = details
+            } catch (error) {
+              console.error(`Failed to fetch details for user ${id}:`, error)
+              // Set fallback details for failed fetches
+              detailsMap[id] = { full_name: 'Unknown User', email: '', phone: '' }
+            }
+          }
+        }
+
+        setUserDetails((prev) => ({ ...prev, ...detailsMap }))
+      } else {
+        // For individual chats, fetch details for the recipient only
+        if (recipient && !userDetails[recipient]) {
+          try {
+            const details = await getUserDetailsById(recipient)
+            setUserDetails((prev) => ({ ...prev, [recipient]: details }))
+          } catch (error) {
+            console.error(`Failed to fetch details for recipient ${recipient}:`, error)
+            setUserDetails((prev) => ({ 
+              ...prev, 
+              [recipient]: { full_name: 'Unknown User', email: '', phone: '' }
+            }))
+          }
         }
       }
-
-      setUserDetails((prev) => ({ ...prev, ...detailsMap }))
     }
 
     fetchUserDetails()
-  }, [participants])
-
+  }, [participants, isGroup, recipient, user?.id])
 
   const sendMessage = async () => {
     if (!input.trim() || !user) return
     await storeMessage({ chatId, senderId: user.id, content: input })
     setInput('')
   }
-
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -72,13 +103,29 @@ export function ChatBox({ chatId, participants }: { chatId: string, participants
 
     const details = userDetails[senderId]
     return {
-      name: details?.full_name || details?.email?.split('@')[0] || 'Recipient',
+      name: details?.full_name || details?.email?.split('@')[0] || 'Unknown',
       email: details?.email,
       phone: details?.phone,
     }
   }
 
-  const recipientDetails = getSenderDetails(recipient)
+  // Get header details based on chat type
+  const getHeaderDetails = () => {
+    if (isGroup) {
+      return {
+        name: chatName || 'Group Chat',
+        subtitle: `${participants.length} participants`,
+      }
+    } else {
+      const recipientDetails = getSenderDetails(recipient)
+      return {
+        name: recipientDetails?.name || 'Chat',
+        subtitle: recipientDetails?.email || '',
+      }
+    }
+  }
+
+  const headerDetails = getHeaderDetails()
 
   return (
     <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--background)' }}>
@@ -91,10 +138,10 @@ export function ChatBox({ chatId, participants }: { chatId: string, participants
           <FaUserCircle size={36} style={{ color: 'var(--muted-foreground)' }} />
           <div>
             <h3 className="font-medium" style={{ color: 'var(--foreground)' }}>
-              {recipientDetails?.name || 'Chat'}
+              {headerDetails.name}
             </h3>
             <div>
-              <span>{recipientDetails?.email || ''}</span>
+              <span>{headerDetails.subtitle}</span>
             </div>
           </div>
         </div>
@@ -113,7 +160,6 @@ export function ChatBox({ chatId, participants }: { chatId: string, participants
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4" style={{ backgroundColor: 'var(--grey-light)' }}>
-        {/* Date Separator */}
         {messages.map((msg, index) => {
           const senderDetails = getSenderDetails(msg.sender_id)
           const isCurrentUser = msg.sender_id === user?.id
@@ -182,6 +228,7 @@ export function ChatBox({ chatId, participants }: { chatId: string, participants
             </React.Fragment>
           )
         })}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Input Area */}

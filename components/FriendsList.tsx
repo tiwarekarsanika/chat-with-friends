@@ -1,8 +1,7 @@
+
 'use client'
 import { useState, useEffect } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
-import getAllFriends from '../lib/get-all-friends'
-import { FaUserCircle } from 'react-icons/fa'
 import { ChatBox } from './ChatBox'
 import { getOrCreateChat } from '~/lib/get-or-create-chat'
 import {
@@ -12,44 +11,74 @@ import {
 import AddFriend from './AddFriend'
 import { getUserDetailsById } from '~/lib/get-user-details'
 import { getLastMessage } from '~/lib/get-last-message'
+import getAllChats from '~/lib/get-all-chats'
 
 type Friend = {
   id: string
   name?: string
   lastMessage?: string
   lastMessageTime?: string
+  is_group?: boolean
 }
 
 const FriendsList = () => {
   const [chat, setChat] = useState<any | null>(null)
   const [selectedFriend, setSelectedFriend] = useState<string | null>(null)
   const [friendsList, setFriendsList] = useState<Friend[]>([])
+  const [selectedFriendData, setSelectedFriendData] = useState<Friend | null>(null)
   const user = useUser()
 
   const refreshFriendsList = async () => {
-    if (!user?.id) return
+    if (!user?.id) return;
 
     try {
-      const friends = await getAllFriends(user.id)
+      const items = await getAllChats(user.id);
+      console.log('getAllChats returned:', items);
 
-      const enrichedFriends = await Promise.all(friends.map(async (friend) => {
-        const userDetails = await getUserDetailsById(friend.id)
-        const chat = await getOrCreateChat([user.id!, friend.id])
-        const lastMsg = await getLastMessage(chat.id)
-        // console.log("this was the last message ", lastMsg)
-        return {
-          id: friend.id,
-          name: userDetails?.full_name || friend.email.split('@')[0],
-          lastMessage: lastMsg?.content || 'Click to start chatting...',
-          lastMessageTime: lastMsg?.created_at ? new Date(lastMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
-        }
-      }))
+      const enrichedItems = await Promise.all(
+        items.map(async (item) => {
+          console.log('Processing item:', item);
 
-      setFriendsList(enrichedFriends)
+          if (!item.is_group) {  // friend
+            const chat = await getOrCreateChat([user.id!, item.id]);
+            const userDetails = await getUserDetailsById(item.id);
+            const lastMsg = await getLastMessage(chat.id);
+
+            return {
+              id: item.id,
+              name: userDetails?.full_name || (item.email ? item.email.split('@')[0] : 'Unknown'),
+              lastMessage: lastMsg?.content || 'Click to start chatting...',
+              lastMessageTime: lastMsg?.created_at
+                ? new Date(lastMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : '',
+              is_group: false,
+            };
+          } else {  // group
+            const lastMsg = await getLastMessage(item.id);
+
+            return {
+              id: item.id,
+              name: item.email || 'Group Chat',
+              lastMessage: lastMsg?.content || 'No messages yet',
+              lastMessageTime: lastMsg?.created_at
+                ? new Date(lastMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : '',
+              is_group: true,
+            };
+          }
+        })
+      );
+
+      setFriendsList(enrichedItems);
     } catch (error) {
-      console.error(error)
+      if (error instanceof Error) {
+        console.error('Error in refreshFriendsList:', error.message);
+        console.error(error.stack);
+      } else {
+        console.error('Unknown error in refreshFriendsList:', error);
+      }
     }
-  }
+  };
 
   useEffect(() => {
     if (user?.id) {
@@ -57,17 +86,33 @@ const FriendsList = () => {
     }
   }, [user])
 
-
   useEffect(() => {
     if (user?.id && selectedFriend) {
-      // console.log("user and selected friend are ", user, selectedFriend)
-      getOrCreateChat([user.id, selectedFriend])
-        .then(setChat)
-        .catch(console.error)
-    }
-    // console.log("the chat is ", chat)
-  }, [selectedFriend, user])
+      const selectedChat = friendsList.find(f => f.id === selectedFriend)
+      if (!selectedChat) return
 
+      setSelectedFriendData(selectedChat)
+
+      if (selectedChat.is_group) {
+        // For group chats, use the group chat ID directly
+        setChat({
+          id: selectedFriend,
+          participant_ids: [], // We'll need to fetch actual participants if needed
+          is_group: true
+        })
+      } else {
+        // For individual chats, create/get the chat
+        getOrCreateChat([user.id, selectedFriend])
+          .then(chatData => {
+            setChat({
+              ...chatData,
+              is_group: false
+            })
+          })
+          .catch(console.error)
+      }
+    }
+  }, [selectedFriend, user, friendsList])
 
   return (
     <div className="flex h-full" style={{ backgroundColor: 'var(--grey-light)' }}>
@@ -92,7 +137,6 @@ const FriendsList = () => {
           <AddFriend onFriendAdded={refreshFriendsList} />
         </div>
 
-
         {/* Friends List */}
         <div className="flex-1 overflow-y-auto">
           {friendsList.length > 0 ? (
@@ -109,12 +153,17 @@ const FriendsList = () => {
               >
                 <div className="relative w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-lg font-semibold">
                   {friend.name?.charAt(0).toUpperCase()}
+                  {friend.is_group && (
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                      <span className="text-xs">👥</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="ml-3 flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>
-                      {friend.name}
+                      {friend.name} {friend.is_group && '(Group)'}
                     </p>
                     <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>{friend.lastMessageTime || ''}</span>
                   </div>
@@ -139,7 +188,12 @@ const FriendsList = () => {
       {/* Chat Area */}
       <div className="flex-1 flex flex-col">
         {chat ? (
-          <ChatBox chatId={chat.id} participants={chat.participant_ids} />
+          <ChatBox 
+            chatId={chat.id} 
+            participants={chat.participant_ids || []} 
+            isGroup={chat.is_group || false}
+            chatName={selectedFriendData?.name}
+          />
         ) : (
           <div className="flex-1 flex items-center justify-center" style={{
             color: 'var(--muted-foreground)',

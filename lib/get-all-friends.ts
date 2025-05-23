@@ -1,4 +1,4 @@
-// lib/get-all-friends.ts
+// // lib/get-all-friends.ts
 import { createSupabaseBrowserClient } from './supabase-browser'
 
 export default async function getAllFriends(userId: string) {
@@ -19,4 +19,3 @@ export default async function getAllFriends(userId: string) {
     email: row.friend_email,
   }))
 }
-
