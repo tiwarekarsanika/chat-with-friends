@@ -1,6 +1,6 @@
 import { createBrowserClient } from '@supabase/ssr'
 
-console.log('✅ using correct createClient')
+// console.log('✅ using correct createClient')
 
 export function createClient() {
   return createBrowserClient(
