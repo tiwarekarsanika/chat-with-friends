@@ -14,22 +14,42 @@ import {
 import { FaUserCircle, FaMicrophone } from 'react-icons/fa'
 import { getUserDetailsById } from '~/lib/get-user-details'
 
+// Define proper types
+interface UserDetails {
+  full_name: string
+  email: string
+  phone: string
+}
+
+interface ChatBoxProps {
+  chatId: string
+  participants: string[]
+  isGroup?: boolean
+  chatName?: string | null
+}
+
+interface SenderDetails {
+  name: string
+  email?: string
+  phone?: string
+}
+
+interface HeaderDetails {
+  name: string
+  subtitle: string
+}
+
 export function ChatBox({ 
   chatId, 
   participants, 
   isGroup = false, 
   chatName = null 
-}: { 
-  chatId: string, 
-  participants: any[], 
-  isGroup?: boolean,
-  chatName?: string | null 
-}) {
+}: ChatBoxProps) {
   const [input, setInput] = useState('')
   const messages = useMessagesQuery(chatId)
   const user = useUser()
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const [userDetails, setUserDetails] = useState<{ [id: string]: any }>({})
+  const [userDetails, setUserDetails] = useState<Record<string, UserDetails>>({})
 
   // For group chats, we don't need to find a single recipient
   const recipient = !isGroup ? participants.find((p) => p !== user?.id) : null
@@ -39,7 +59,7 @@ export function ChatBox({
       if (isGroup) {
         // For group chats, fetch details for all participants except current user
         const userParticipants = participants.filter(id => id !== user?.id)
-        const detailsMap: { [id: string]: any } = {}
+        const detailsMap: Record<string, UserDetails> = {}
 
         for (const id of userParticipants) {
           if (!userDetails[id]) {
@@ -73,7 +93,7 @@ export function ChatBox({
     }
 
     fetchUserDetails()
-  }, [participants, isGroup, recipient, user?.id])
+  }, [participants, isGroup, recipient, user?.id, userDetails])
 
   const sendMessage = async () => {
     if (!input.trim() || !user) return
@@ -92,7 +112,7 @@ export function ChatBox({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const getSenderDetails = (senderId: string) => {
+  const getSenderDetails = (senderId: string): SenderDetails => {
     if (senderId === user?.id) {
       return {
         name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'You',
@@ -110,14 +130,14 @@ export function ChatBox({
   }
 
   // Get header details based on chat type
-  const getHeaderDetails = () => {
+  const getHeaderDetails = (): HeaderDetails => {
     if (isGroup) {
       return {
         name: chatName || 'Group Chat',
         subtitle: `${participants.length} participants`,
       }
     } else {
-      const recipientDetails = getSenderDetails(recipient)
+      const recipientDetails = getSenderDetails(recipient || '')
       return {
         name: recipientDetails?.name || 'Chat',
         subtitle: recipientDetails?.email || '',

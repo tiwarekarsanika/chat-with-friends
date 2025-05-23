@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useUser } from '@supabase/auth-helpers-react'
 import { ChatBox } from './ChatBox'
 import { getOrCreateChat } from '~/lib/get-or-create-chat'
@@ -20,14 +20,20 @@ type Friend = {
   is_group?: boolean
 }
 
+type Chat = {
+  id: string
+  participant_ids: string[]
+  is_group: boolean
+}
+
 const FriendsList = () => {
-  const [chat, setChat] = useState<any | null>(null)
+  const [chat, setChat] = useState<Chat | null>(null)
   const [selectedFriend, setSelectedFriend] = useState<string | null>(null)
   const [friendsList, setFriendsList] = useState<Friend[]>([])
   const [selectedFriendData, setSelectedFriendData] = useState<Friend | null>(null)
   const user = useUser()
 
-  const refreshFriendsList = async () => {
+  const refreshFriendsList = useCallback(async () => {
     if (!user?.id) return;
 
     try {
@@ -77,13 +83,13 @@ const FriendsList = () => {
         console.error('Unknown error in refreshFriendsList:', error);
       }
     }
-  };
+  }, [user?.id]);
 
   useEffect(() => {
     if (user?.id) {
       refreshFriendsList()
     }
-  }, [user])
+  }, [user?.id, refreshFriendsList])
 
   useEffect(() => {
     if (user?.id && selectedFriend) {
@@ -111,7 +117,7 @@ const FriendsList = () => {
           .catch(console.error)
       }
     }
-  }, [selectedFriend, user, friendsList])
+  }, [selectedFriend, user?.id, friendsList])
 
   return (
     <div className="flex h-full" style={{ backgroundColor: 'var(--grey-light)' }}>
